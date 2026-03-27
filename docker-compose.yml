@@ -1,0 +1,25 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Points the app at the mongo service by its compose service name.
+      MONGO_URI: mongodb://mongo:27017/musiccatalog
+      FLASK_ENV: development
+    volumes:
+      # Mount source code so edits are reflected without rebuilding the image.
+      - .:/app
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:7.0
+    ports:
+      # Expose to the host so seed.py can be run locally without entering the container.
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+volumes:
+  mongo_data:
