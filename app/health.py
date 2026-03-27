@@ -14,4 +14,5 @@ def health_check():
     except Exception as e:
         return jsonify({"status": "unhealthy", "error": str(e)}), 503
 
+    current_app.logger.info("health check OK, latency=%.2fms", latency_ms)
     return jsonify({"status": "healthy", "db_latency_ms": latency_ms}), 200
