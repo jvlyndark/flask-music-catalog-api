@@ -10,6 +10,7 @@ from .models import (
     PaginatedResponse,
     RatingInput,
     RatingResponse,
+    RatingStatsResponse,
     TrackResponse,
 )
 
@@ -158,3 +159,36 @@ def add_rating():
 
     response = RatingResponse.from_mongo(rating_doc)
     return jsonify(response.model_dump(mode="json")), 201
+
+
+@tracks_bp.get("/<track_id>/rating")
+def get_rating_stats(track_id):
+    try:
+        track_oid = ObjectId(track_id)
+    except InvalidId:
+        abort(404, "track not found")
+
+    if current_app.db["tracks"].find_one({"_id": track_oid}) is None:
+        abort(404, "track not found")
+
+    pipeline = [
+        {"$match": {"track_id": track_oid}},
+        {"$group": {
+            "_id": None,
+            "avg": {"$avg": "$rating"},
+            "min": {"$min": "$rating"},
+            "max": {"$max": "$rating"},
+        }},
+    ]
+    results = list(current_app.db["ratings"].aggregate(pipeline))
+
+    if results:
+        stats = RatingStatsResponse(
+            average=round(results[0]["avg"], 2),
+            min=results[0]["min"],
+            max=results[0]["max"],
+        )
+    else:
+        stats = RatingStatsResponse(average=None, min=None, max=None)
+
+    return jsonify(stats.model_dump()), 200

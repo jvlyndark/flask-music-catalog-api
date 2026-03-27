@@ -45,6 +45,12 @@ class RatingResponse(BaseModel):
         )
 
 
+class RatingStatsResponse(BaseModel):
+    average: Optional[float]
+    min: Optional[float]
+    max: Optional[float]
+
+
 class PaginatedResponse(BaseModel):
     items: list[TrackResponse]
     per_page: int
