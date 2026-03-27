@@ -72,3 +72,44 @@ def avg_difficulty():
 
     response = AverageDifficultyResponse(average_difficulty=average)
     return jsonify(response.model_dump()), 200
+
+
+@tracks_bp.get("/search")
+def search_tracks():
+    # MongoDB text indexes tokenize on word boundaries (spaces, hyphens, etc.)
+    # and match whole tokens. This means "cascade" matches "Cascade Protocol"
+    # but "cascad" does not. True substring/prefix matching would require
+    # $regex, which cannot use the text index and performs a collection scan.
+    q = request.args.get("q", "").strip()
+    if not q:
+        abort(400, "q parameter is required")
+
+    raw_per_page = request.args.get("per_page", "10")
+    try:
+        per_page = int(raw_per_page)
+    except ValueError:
+        abort(400, f"per_page must be an integer, got: {raw_per_page!r}")
+
+    if not (1 <= per_page <= 100):
+        abort(400, "per_page must be between 1 and 100")
+
+    query = {"$text": {"$search": q}}
+    after = request.args.get("after")
+    if after:
+        try:
+            query["_id"] = {"$gt": ObjectId(after)}
+        except InvalidId:
+            abort(400, f"invalid cursor: {after!r}")
+
+    collection = current_app.db["tracks"]
+    docs = list(collection.find(query).sort("_id", 1).limit(per_page + 1))
+
+    has_next = len(docs) > per_page
+    if has_next:
+        docs = docs[:per_page]
+
+    items = [TrackResponse.from_mongo(doc) for doc in docs]
+    next_cursor = items[-1].id if has_next else None
+
+    response = PaginatedResponse(items=items, per_page=per_page, next_cursor=next_cursor)
+    return jsonify(response.model_dump()), 200
