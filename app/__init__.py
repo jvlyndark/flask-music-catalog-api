@@ -3,6 +3,7 @@ from pymongo import MongoClient
 
 from .config import Config, config_map
 from .errors import register_error_handlers
+from .health import health_bp
 from .routes import tracks_bp
 
 
@@ -20,6 +21,7 @@ def create_app(config_name: str = "development") -> Flask:
     db_name = app.config["MONGO_URI"].rstrip("/").split("/")[-1] or "musiccatalog"
     app.db = client[db_name]
 
+    app.register_blueprint(health_bp)
     app.register_blueprint(tracks_bp)
     register_error_handlers(app)
 
