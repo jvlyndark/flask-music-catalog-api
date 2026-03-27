@@ -1,8 +1,17 @@
+from datetime import datetime
+
 from bson import ObjectId
 from bson.errors import InvalidId
 from flask import Blueprint, abort, current_app, jsonify, request
+from pydantic import ValidationError
 
-from .models import AverageDifficultyResponse, PaginatedResponse, TrackResponse
+from .models import (
+    AverageDifficultyResponse,
+    PaginatedResponse,
+    RatingInput,
+    RatingResponse,
+    TrackResponse,
+)
 
 tracks_bp = Blueprint("tracks", __name__, url_prefix="/tracks")
 
@@ -113,3 +122,39 @@ def search_tracks():
 
     response = PaginatedResponse(items=items, per_page=per_page, next_cursor=next_cursor)
     return jsonify(response.model_dump()), 200
+
+
+@tracks_bp.post("/rating")
+def add_rating():
+    # Ratings live in a separate collection rather than embedded in the track
+    # document. Embedding would create an unbounded array that grows with every
+    # rating, bloating the track document and eventually hitting the 16MB BSON
+    # limit. A separate collection also lets us query and aggregate ratings
+    # independently without loading the full track.
+    body = request.get_json(silent=True)
+    if body is None:
+        abort(400, "request body must be valid JSON")
+
+    try:
+        data = RatingInput.model_validate(body)
+    except ValidationError as e:
+        abort(400, e.errors())
+
+    try:
+        track_oid = ObjectId(data.track_id)
+    except InvalidId:
+        abort(404, "track not found")
+
+    if current_app.db["tracks"].find_one({"_id": track_oid}) is None:
+        abort(404, "track not found")
+
+    rating_doc = {
+        "track_id": track_oid,
+        "rating": data.rating,
+        "created_at": datetime.utcnow(),
+    }
+    result = current_app.db["ratings"].insert_one(rating_doc)
+    rating_doc["_id"] = result.inserted_id
+
+    response = RatingResponse.from_mongo(rating_doc)
+    return jsonify(response.model_dump(mode="json")), 201
