@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from .config import Config, config_map
 from .errors import register_error_handlers
 from .health import health_bp
+from .limiter import limiter
 from .logging_config import setup_logging
 from .metrics import metrics_bp, register_metrics
 from .middleware import register_middleware
@@ -27,6 +28,7 @@ def create_app(config_name: str = "development") -> Flask:
     setup_logging(app)
     register_middleware(app)
     register_metrics(app)
+    limiter.init_app(app)
     app.register_blueprint(health_bp)
     app.register_blueprint(metrics_bp)
     app.register_blueprint(tracks_bp)

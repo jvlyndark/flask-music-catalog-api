@@ -2,10 +2,13 @@ import time
 
 from flask import Blueprint, current_app, jsonify
 
+from .limiter import limiter
+
 health_bp = Blueprint("health", __name__)
 
 
 @health_bp.get("/health")
+@limiter.exempt
 def health_check():
     try:
         start = time.monotonic()

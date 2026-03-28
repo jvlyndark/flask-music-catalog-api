@@ -3,6 +3,8 @@ import time
 from flask import Blueprint, Flask, Response, g, request
 from prometheus_client import Counter, Histogram, generate_latest
 
+from .limiter import limiter
+
 http_requests_total = Counter(
     "http_requests_total",
     "Total HTTP requests",
@@ -23,6 +25,7 @@ metrics_bp = Blueprint("metrics", __name__)
 
 
 @metrics_bp.get("/metrics")
+@limiter.exempt
 def metrics():
     return Response(generate_latest(), content_type="text/plain; charset=utf-8")
 

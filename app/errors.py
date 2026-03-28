@@ -6,6 +6,10 @@ def register_error_handlers(app):
     def bad_request(e):
         return jsonify({"error": str(e.description)}), 400
 
+    @app.errorhandler(429)
+    def rate_limited(e):
+        return jsonify({"error": "rate limit exceeded"}), 429
+
     @app.errorhandler(404)
     def not_found(e):
         return jsonify({"error": "not found"}), 404
