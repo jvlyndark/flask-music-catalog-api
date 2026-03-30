@@ -173,12 +173,14 @@ def get_rating_stats(track_id):
 
     pipeline = [
         {"$match": {"track_id": track_oid}},
-        {"$group": {
-            "_id": None,
-            "avg": {"$avg": "$rating"},
-            "min": {"$min": "$rating"},
-            "max": {"$max": "$rating"},
-        }},
+        {
+            "$group": {
+                "_id": None,
+                "avg": {"$avg": "$rating"},
+                "min": {"$min": "$rating"},
+                "max": {"$max": "$rating"},
+            }
+        },
     ]
     results = list(current_app.db["ratings"].aggregate(pipeline))
 

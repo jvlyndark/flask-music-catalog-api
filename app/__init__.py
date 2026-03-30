@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from pymongo import MongoClient
 
 from .config import Config, config_map
@@ -24,6 +25,9 @@ def create_app(config_name: str = "development") -> Flask:
     # routes can access app.db without repeating the URI parsing logic.
     db_name = app.config["MONGO_URI"].rstrip("/").split("/")[-1] or "musiccatalog"
     app.db = client[db_name]
+
+    # Permissive defaults are fine here; a real deployment would restrict origins via config
+    CORS(app)
 
     setup_logging(app)
     register_middleware(app)

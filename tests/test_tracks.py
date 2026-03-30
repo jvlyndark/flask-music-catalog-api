@@ -1,9 +1,8 @@
 import pytest
 from bson import ObjectId
-from pymongo import TEXT, ASCENDING
+from pymongo import ASCENDING, TEXT
 
 from app import create_app
-
 
 SAMPLE_TRACKS = [
     {
@@ -71,6 +70,7 @@ def _seed_tracks(client, tracks):
 
 # GET /tracks
 
+
 def test_list_tracks_returns_all(client):
     _seed_tracks(client, SAMPLE_TRACKS[:3])
     resp = client.get("/tracks")
@@ -111,6 +111,7 @@ def test_list_tracks_empty(client):
 
 # GET /tracks/avg/difficulty
 
+
 def test_avg_difficulty_all(client):
     _seed_tracks(client, SAMPLE_TRACKS[:3])
     resp = client.get("/tracks/avg/difficulty")
@@ -140,6 +141,7 @@ def test_avg_difficulty_invalid_level(client):
 
 
 # GET /tracks/search
+
 
 def test_search_finds_by_artist(client):
     _seed_tracks(client, SAMPLE_TRACKS[:3])
@@ -203,6 +205,7 @@ def test_search_pagination(client):
 
 # POST /tracks/rating
 
+
 def _post_rating(client, body):
     return client.post("/tracks/rating", json=body)
 
@@ -265,6 +268,7 @@ def test_add_rating_empty_body(client):
 
 
 # GET /tracks/<track_id>/rating
+
 
 def _add_ratings(client, track_id, ratings):
     for r in ratings:

@@ -1,6 +1,7 @@
 import json
 import os
-from pymongo import MongoClient, TEXT, ASCENDING
+
+from pymongo import ASCENDING, TEXT, MongoClient
 
 MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017/musiccatalog")
 DATA_FILE = os.path.join(os.path.dirname(__file__), "tracks.json")
