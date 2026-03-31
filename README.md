@@ -1,5 +1,7 @@
 # flask-music-catalog-api
 
+![CI](https://github.com/jvlyndark/flask-music-catalog-api/actions/workflows/ci.yml/badge.svg)
+
 Production-grade Flask + MongoDB REST API for browsing, searching, and rating music tracks.
 
 ## Quick Start
@@ -23,6 +25,8 @@ API is now running at http://localhost:8000
 | GET | `/tracks/search` | Full-text search on artist and title | `q` (required), `per_page`, `after` |
 | POST | `/tracks/rating` | Submit a rating for a track | Body: `track_id`, `rating` (1-5) |
 | GET | `/tracks/<track_id>/rating` | Rating statistics for a track | None |
+| GET | `/health` | Health check with DB latency | None |
+| GET | `/metrics` | Prometheus metrics endpoint | None |
 
 ## Running Tests
 
@@ -48,10 +52,20 @@ make test
 
 **Null for absent data instead of 0.** Zero is a valid value (a track could have a 0.0 difficulty or a zero-star rating in another system). Null communicates "no data exists," which is semantically different from "the value is zero."
 
+## Observability & Operations
+
+**Structured logging.** JSON log lines with a request ID for tracing. Request IDs are passed through from the `X-Request-ID` header or auto-generated as UUIDs when the header is absent.
+
+**Prometheus metrics.** Request count and latency histogram per endpoint, exposed at `/metrics`. Health and metrics endpoints are excluded to avoid self-referential noise in the data.
+
+**Rate limiting.** 60 requests per minute per IP using flask-limiter with in-memory storage. A production deployment would swap to Redis for shared state across workers.
+
+**Health checks.** `/health` pings MongoDB and reports connection latency, giving load balancers a reliable liveness signal without depending on application-level routes.
+
 ## Tech Stack
 
-- Python 3.11, Flask, gunicorn
+- Python 3.11, Flask, flask-cors, gunicorn
 - MongoDB 7.0, pymongo
-- Pydantic v2
-- pytest
-- Docker, Docker Compose
+- Pydantic v2, flask-limiter, prometheus-client
+- pytest, ruff
+- Docker, Docker Compose, GitHub Actions
